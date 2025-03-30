@@ -264,7 +264,8 @@ export default {
       return texts[status] || status
     },
     handleSearch() {
-      // TODO: 实现搜索逻辑
+      this.currentPage = 1
+      this.loadGoodsList()
     },
     resetForm() {
       this.filterForm = {
@@ -305,20 +306,45 @@ export default {
     },
     handleSizeChange(val) {
       this.pageSize = val
-      // TODO: 重新加载数据
+      this.loadGoodsList()
     },
     handleCurrentChange(val) {
       this.currentPage = val
-      // TODO: 重新加载数据
+      this.loadGoodsList()
     },
     submitForm() {
       this.$refs.goodsForm.validate((valid) => {
         if (valid) {
-          // TODO: 实现提交逻辑
-          this.dialogVisible = false
-          this.$message.success('操作成功')
+          // 调用入库API
+          this.$axios.post('/api/goods/inbound', this.goodsForm)
+            .then(response => {
+              this.$message.success('入库成功')
+              this.dialogVisible = false
+              // 刷新列表
+              this.loadGoodsList()
+            })
+            .catch(error => {
+              this.$message.error('入库失败：' + error.message)
+            })
         }
       })
+    },
+    // 加载货物列表
+    loadGoodsList() {
+      this.$axios.get('/api/goods/list', {
+        params: {
+          page: this.currentPage,
+          size: this.pageSize,
+          ...this.filterForm
+        }
+      })
+        .then(response => {
+          this.goodsList = response.data.items
+          this.total = response.data.total
+        })
+        .catch(error => {
+          this.$message.error('加载列表失败：' + error.message)
+        })
     }
   }
 }
